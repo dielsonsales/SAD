@@ -1,6 +1,6 @@
+import logging
 import math
 import pandas as pd
-# import SQLAlchemy
 
 from datetime import datetime
 from progress.bar import Bar
@@ -13,8 +13,20 @@ SUBMISSION_DATE = 'submission_date'
 
 df = pd.read_csv('B2W-Reviews01.csv', parse_dates=[SUBMISSION_DATE], low_memory=False)
 
-# Remove lines with null state
+# Remove lines with null values
+df.dropna(subset=['product_name'], inplace=True)
+df.dropna(subset=['product_brand'], inplace=True)
+df.dropna(subset=['site_category_lv1'], inplace=True)
+df.dropna(subset=['site_category_lv2'], inplace=True)
+df.dropna(subset=['review_title'], inplace=True)
+df.dropna(subset=['recommend_to_a_friend'], inplace=True)
+df.dropna(subset=['review_text'], inplace=True)
+df.dropna(subset=['reviewer_birth_year'], inplace=True)
+df.dropna(subset=['reviewer_gender'], inplace=True)
 df.dropna(subset=['reviewer_state'], inplace=True)
+
+df = df.sample(n=50, random_state=42)
+
 
 engine = create_engine('sqlite:////Users/dielsonsales/Workspace/Python/DataWarehouse/DataWarehouse.db', echo=True)
 Base = declarative_base()
@@ -101,7 +113,12 @@ day_of_week_map = {
 }
 
 
-with Bar("Inserting...") as bar:
+# Disables logging for SQLAlchemy
+logging.basicConfig()
+logging.disable(logging.WARNING)
+# logging.getLogger('sqlalchemy').setLevel(logging.ERROR)
+
+with Bar("Inserting...", max=len(df)) as bar:
     time_id_counter = 1
     # Itera sobre as linhas do DataFrame e insere os dados nas tabelas
     for index, row in df.iterrows():
@@ -111,7 +128,7 @@ with Bar("Inserting...") as bar:
             estado = Estado(name=reviewer_state)
 
         tempo = Tempo(id=time_id_counter, ano=row['submission_date'].year, dia_ano=row['submission_date'].dayofyear, dia_semana=day_of_week_map[row['submission_date'].weekday()], timestamp=row['submission_date'])
-        
+
         session.commit()
 
         usuario = session.query(Usuario).filter_by(id=row['reviewer_id']).first()
@@ -134,41 +151,6 @@ with Bar("Inserting...") as bar:
 
         time_id_counter += 1
         bar.next()
-   
-
-
-# time_id_counter = 1
-
-# # Itera sobre as linhas do DataFrame e insere os dados nas tabelas
-# for index, row in df.iterrows():
-#     reviewer_state = row['reviewer_state']
-#     estado = session.query(Estado).filter_by(name=reviewer_state).first()
-#     if estado is None:
-#       estado = Estado(name=reviewer_state)
-
-#     tempo = Tempo(id=time_id_counter, ano=row['submission_date'].year, dia_ano=row['submission_date'].dayofyear, dia_semana=day_of_week_map[row['submission_date'].weekday()], timestamp=row['submission_date'])
-    
-#     session.commit()
-
-#     usuario = session.query(Usuario).filter_by(id=row['reviewer_id']).first()
-#     if usuario is None:
-#       usuario = Usuario(id=row['reviewer_id'], faixa_etaria=calcula_faixa_etaria(row['reviewer_birth_year']), genero=row['reviewer_gender'])
-
-#     produto = session.query(Produto).filter_by(id=row['product_id']).first()
-#     if produto is None:
-#       produto = Produto(id=row['product_id'], nome=row['product_name'], marca=row['product_brand'], categoria=row['site_category_lv1'], subcategoria=row['site_category_lv2'])
-
-#     t_fact = T_FACT(avaliacao=row['overall_rating'], recomenda=row['recommend_to_a_friend'], estado_name=estado.name, tempo_id=tempo.id, usuario_id=usuario.id, produto_id=produto.id)
-
-#     if reviewer_state and estado:
-#       session.add(estado)
-
-#     session.add(tempo)
-#     session.add(usuario)
-#     session.add(produto)
-#     session.add(t_fact)
-
-#     time_id_counter += 1
 
 
 session.commit()
