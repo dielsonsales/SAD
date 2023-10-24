@@ -1,3 +1,4 @@
 env/
 B2W-Reviews01.csv
 DataWarehouse.db
+*.DS_Store
