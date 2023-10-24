@@ -25,7 +25,7 @@ df.dropna(subset=['reviewer_birth_year'], inplace=True)
 df.dropna(subset=['reviewer_gender'], inplace=True)
 df.dropna(subset=['reviewer_state'], inplace=True)
 
-df = df.sample(n=50, random_state=42)
+# df = df.sample(n=50, random_state=42)
 
 
 engine = create_engine('sqlite:////Users/dielsonsales/Workspace/Python/DataWarehouse/DataWarehouse.db', echo=True)
